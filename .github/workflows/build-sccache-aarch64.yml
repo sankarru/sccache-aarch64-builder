@@ -18,8 +18,15 @@ jobs:
           - aarch64-unknown-linux-musl
 
     steps:
-      - name: Checkout
+      - name: Checkout workflow repo
         uses: actions/checkout@v4
+
+      - name: Checkout sccache source
+        uses: actions/checkout@v4
+        with:
+          repository: mozilla/sccache
+          path: sccache
+          ref: v0.9.0
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -32,11 +39,12 @@ jobs:
           sudo apt install -y gcc-aarch64-linux-gnu
 
       - name: Build sccache with cross
+        working-directory: ./sccache
         run: |
           cargo install cross --force
-          cross build --release --target ${{ matrix.target }} --manifest-path=~/.cargo/registry/src/*/sccache-*/Cargo.toml
-          cp ~/.cargo/target/${{ matrix.target }}/release/sccache sccache-${{ matrix.target }}
-          chmod +x sccache-${{ matrix.target }}
+          cross build --release --target ${{ matrix.target }}
+          cp target/${{ matrix.target }}/release/sccache ../sccache-${{ matrix.target }}
+          chmod +x ../sccache-${{ matrix.target }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -47,7 +55,7 @@ jobs:
       - name: Get sccache version
         id: version
         run: |
-          VERSION=$(~/.cargo/bin/sccache --version 2>/dev/null || cargo install sccache --force 2>/dev/null && ~/.cargo/bin/sccache --version | cut -d' ' -f2)
+          VERSION=$(cd sccache && git describe --tags --always)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "sccache version: $VERSION"
 
