@@ -42,6 +42,8 @@ jobs:
         working-directory: ./sccache
         run: |
           cargo install cross --force
+          export OPENSSL_NO_PKG_CONFIG=1
+          export OPENSSL_STATIC=1
           cross build --release --target ${{ matrix.target }}
           cp target/${{ matrix.target }}/release/sccache ../sccache-${{ matrix.target }}
           chmod +x ../sccache-${{ matrix.target }}
