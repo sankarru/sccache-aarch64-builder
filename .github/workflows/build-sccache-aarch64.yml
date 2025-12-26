@@ -1,0 +1,77 @@
+name: Build sccache for aarch64
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        target:
+          - aarch64-unknown-linux-gnu
+          - aarch64-unknown-linux-musl
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
+
+      - name: Install cross-compilation tools
+        run: |
+          sudo apt update
+          sudo apt install -y gcc-aarch64-linux-gnu
+          if [ "${{ matrix.target }}" = "aarch64-unknown-linux-musl" ]; then
+            sudo apt install -y musl-tools musl-dev
+          fi
+
+      - name: Build sccache from crates.io
+        run: cargo install sccache --target ${{ matrix.target }} --force
+
+      - name: Rename binary
+        run: |
+          ~/.cargo/bin/sccache --version
+          cp ~/.cargo/bin/sccache sccache-${{ matrix.target }}
+          chmod +x sccache-${{ matrix.target }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sccache-${{ matrix.target }}
+          path: sccache-${{ matrix.target }}
+
+      - name: Get sccache version
+        id: version
+        run: |
+          VERSION=$(~/.cargo/bin/sccache --version | cut -d' ' -f2)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "sccache version: $VERSION"
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ./artifacts/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
