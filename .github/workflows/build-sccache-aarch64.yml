@@ -39,6 +39,13 @@ jobs:
           echo "ANDROID_NDK_HOME=$PWD/android-ndk-r25c" >> $GITHUB_ENV
           echo "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin" >> $GITHUB_PATH
 
+      - name: Setup NDK tool symlinks
+        run: |
+          cd "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          ln -sf aarch64-linux-android21-ar aarch64-linux-android-ar
+          ln -sf aarch64-linux-android21-clang aarch64-linux-android-clang
+          ln -sf aarch64-linux-android21-clang++ aarch64-linux-android-clang++
+
       - name: Build sccache for Android
         working-directory: ./sccache
         run: |
