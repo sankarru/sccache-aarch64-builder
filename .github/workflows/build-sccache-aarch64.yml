@@ -54,9 +54,7 @@ jobs:
           export AR_aarch64_linux_android=aarch64-linux-android21-ar
           export RANLIB_aarch64_linux_android=aarch64-linux-android21-ranlib
           export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=aarch64-linux-android21-clang
-          export OPENSSL_DIR="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
-          export OPENSSL_NO_VENDOR=1
-          cargo build --release --target ${{ matrix.target }} --features "dist-client,local-storage"
+          cargo build --release --target ${{ matrix.target }} --no-default-features --features dist-client
           cp target/${{ matrix.target }}/release/sccache ../sccache-android-termux
           chmod +x ../sccache-android-termux
 
